@@ -1,0 +1,113 @@
+def externalScript
+pipeline{
+    agent any
+    environment {
+        NAME = "Mohiey"
+        DOCKERCREDS = credentials("dockerhub")
+    }
+    tools {
+        maven "maven-3.8.5"
+    }
+    parameters {
+        string (name: 'PlayerName', defaultValue: 'Messi', description: 'My Favorite Player Name')
+        choice (name: 'Shirt', choices: ['30', '19', '10'], description: 'My Favorite Player Shirts')
+        booleanParam (name: 'RunThatStage', defaultValue: false, description: 'Should I Run That Stage?')
+    }
+    stages{
+        stage("Importing External Script"){
+            steps{
+                echo "====++++Importing External Script++++===="
+                script {
+                    externalScript = load "myscript.groovy"
+                }
+            }
+        }
+        stage("build"){
+            steps{
+                echo "========Building========"
+                echo "My Name is ${NAME}"
+            }
+        }
+
+        stage("test"){
+            when {
+                expression {
+                    env.BRANCH_NAME == "dev" || env.BRANCH_NAME == "master"
+                }
+            }
+            steps{
+                echo "========Testing========"
+            }
+        }
+
+        stage("deploy"){
+            steps{
+                echo "========Deploying========"
+                echo "This is DockerHub Creds ${DOCKERCREDS_USR} and ${DOCKERCREDS_PSW}"
+            }
+        }
+        stage("CredsWrapper"){
+            steps{
+                echo "====++++Testing CredsWrapper++++====="
+                withCredentials([
+                    usernamePassword(credentialsId: "dockerhub", usernameVariable: "USER", passwordVariable: "PASS"),
+                ]){
+                    echo "====++++${USER}++++===="
+                    echo "====++++${PASS}++++===="
+                }
+            }
+        }
+        stage("Tools"){
+            steps{
+                echo "====++++Testing Tools===="
+                sh "mvn -v"
+            }
+
+        }
+        stage("Parameters"){
+            when {
+                expression {
+                    params.RunThatStage
+                }
+            }
+
+            steps{
+                echo "====++++Testing Params++++===="
+                echo "My Favorite Player is ${params.PlayerName}"
+                echo "His Shrit is ${params.Shirt}"
+            }
+        }
+        stage("Testing External Scripts"){
+            steps{
+                script {
+                    externalScript.sayHello()
+                }
+            }
+            
+        }
+        stage("Input Params For A Specific Stage"){
+            input {
+                message "What is You Favorite Season"
+                ok "Go Ahead"
+                parameters {
+                    choice (name: 'Season', choices: ["2009", "2015", "2019"], description: '')
+                }
+            }
+            steps{
+                echo "====++++Fav Season is ${Season}++++===="
+            }
+        }
+    }
+
+    post{
+        always{
+            echo "====++++always++++===="
+        }
+        success{
+            echo "====++++only when successful++++===="
+        }
+        failure{
+            echo "====++++only when failed++++===="
+        }
+    }
+}

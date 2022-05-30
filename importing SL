@@ -1,0 +1,40 @@
+// library identifier: 'name@version', retriever: modernSCM(
+//     [$class: 'GitSCMSource',
+//     remote: 'repo link',
+//     credentialId: 'id']
+// )
+// this is for project scoped library
+
+@Library("jenkins-shared-library-demo")_
+// @Library("jenkins-shared-library-demo@master")_
+// optional to specfy version, could be [branch name - tag - commit hash]
+
+pipeline{
+    agent any
+    stages{
+        stage("Using Imported Logic From Shared Library"){
+            steps{
+                 script {
+                     build()
+                 }
+            }
+        }
+
+        stage("Using Params in Shared Library"){
+            steps{
+                 script {
+                     sayName "Messi"
+                 }
+            }
+        }
+
+        stage("Using Function From Class in Shared Library"){
+            steps{
+                 script {
+                     test()
+                 }
+            }
+        }
+    }
+
+}

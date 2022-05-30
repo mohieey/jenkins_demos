@@ -1,0 +1,44 @@
+pipeline{
+    agent any
+    tools {
+        maven "maven-3.8.5"
+    }
+    stages{
+        stage("Packaging To jar"){
+            steps{
+                echo "========Packaging========"
+                sh "mvn package"
+            }
+        }
+
+        stage("Building Image"){
+            steps{
+                echo "========Building Image========"
+                withCredentials([
+                    usernamePassword(credentialsId: "dockerhub", usernameVariable: "USER", passwordVariable: "PASS"),
+                ]){
+                    sh "docker build -t mohiey/java-maven-app:fromPipeline ."
+                    sh "echo $PASS | docker login -u $USER --password-stdin"
+                    sh "docker push mohiey/java-maven-app:fromPipeline"
+                }
+            }
+        }
+        
+        stage("Deploying"){
+            steps{
+                echo "====++++Deploying ++++===="
+            }
+        }
+    }
+    post{
+        always{
+            echo "========always========"
+        }
+        success{
+            echo "========pipeline executed successfully ========"
+        }
+        failure{
+            echo "========pipeline execution failed========"
+        }
+    }
+}
